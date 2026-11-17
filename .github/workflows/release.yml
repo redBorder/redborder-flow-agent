@@ -45,24 +45,24 @@ jobs:
         run: |
           docker exec builder bash -c "curl https://raw.githubusercontent.com/redBorder/repoinit/master/sdk9.cfg > /build/sdk9.cfg"
           docker exec builder bash -c "echo \"config_opts['use_host_resolv'] = True\" >> /build/sdk9.cfg"
-          docker exec builder bash -c "echo \"config_opts['use_bootstrap_image'] = False\" >> /build/sdk9.cfg"
           docker exec builder bash -c "ln -s /build/sdk9.cfg /etc/mock/default.cfg"
+          docker exec builder bash -c "useradd -m -G mock builder && chown -R builder /build"
 
       - name: Build Standard RPM using Mock
         run: |
           mkdir -p ./rpms
-          docker exec builder bash -c "git config --global --add safe.directory /build"
-          docker exec builder bash -c "cd /build/ && VERSION=${{ env.TAG }} make -C packaging/rpm rpm WITH_NDPI=0 WITH_NDPI_STATIC=0"
+          docker exec -u builder builder bash -c "git config --global --add safe.directory /build"
+          docker exec -u builder builder bash -c "cd /build/ && VERSION=${{ env.TAG }} make -C packaging/rpm rpm WITH_NDPI=0 WITH_NDPI_STATIC=0"
           docker cp builder:/build/packaging/rpm/pkgs/. ./rpms/standard/
 
       - name: Build Shared nDPI RPM using Mock
         run: |
-          docker exec builder bash -c "cd /build/ && VERSION=${{ env.TAG }} make -C packaging/rpm rpm WITH_NDPI=1 WITH_NDPI_STATIC=0"
+          docker exec -u builder builder bash -c "cd /build/ && VERSION=${{ env.TAG }} make -C packaging/rpm rpm WITH_NDPI=1 WITH_NDPI_STATIC=0"
           docker cp builder:/build/packaging/rpm/pkgs/. ./rpms/ndpi-shared/
 
       - name: Build Static nDPI 6.0 RPM using Mock
         run: |
-          docker exec builder bash -c "cd /build/ && VERSION=${{ env.TAG }} make -C packaging/rpm rpm WITH_NDPI=0 WITH_NDPI_STATIC=1 NDPI_VERSION=6.0"
+          docker exec -u builder builder bash -c "cd /build/ && VERSION=${{ env.TAG }} make -C packaging/rpm rpm WITH_NDPI=0 WITH_NDPI_STATIC=1 NDPI_VERSION=6.0"
           docker cp builder:/build/packaging/rpm/pkgs/. ./rpms/ndpi-static/
 
       - name: Collect and Rename RPMs
